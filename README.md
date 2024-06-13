@@ -63,13 +63,16 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
   * Mower knows how to recognize the attached accessory type
   * Known Ids
 
-    * 0x610: (2 bytes) accessory sends this message on the bus every 0.5s
-        * `02 0f` is being sent by offlimits accessory
+    * 0x610: (2 bytes) off limits accessory sends this message on the bus every 0.5s
+        * `02 0f` is the version number of the off limits firmware
+    * 0x640: (2 bytes) radio link accessory sends this message on the bus every 0.5s
+        * `02 16` is the version number of the radio link firmware
     * 0x611: (1 byte ) mower response of the message above
         * `0x01` mowing
         * `0x00` idle/home/not mowing in general
     * 0x418: (8 bytes): offlimits accessory sends such message when in mowing state . This can frame contains the information for the robot to take action. Last byte is `0x00` when in no magnetic tape is away. When magnetic tape is detected and mower is moving relatively to the tape than last byte changes. 
-
+    * 0x540: ISO-TP Channel Mower to Radio Link
+    * 0x541: ISO-TP Channel Radio Link to Mower
   * DBC file:
 
     * There is a preliminary dbc file with the known messages tagged.
