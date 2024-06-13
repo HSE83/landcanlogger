@@ -75,10 +75,10 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
   * Radio link module
     * 0x640: (2 bytes) radio link accessory sends this message on the bus every 0.5s
         * `02 16` is the version number of the radio link firmware
-    * 0x540: ISO-TP Channel Radio Link -> Landroid, AT-Commands for MQTT
-    * 0x541: ISO-TP Channel Landroid -> Radio Link (Response for AT commands)
-    * 0x542: ISO-TP Channel Radio Link -> Landroid: Status info 16 bytes, hex `dc0ba197020101bbc100760015000100` with some bytes with minor changes
-    * 0x543: ISO-TP Channel Landroid -> Radio Link. I was only able to see ISO-TP FC (flow control) frames, consisting of 3 bytes, mostly `30 08 00` (3=ISO-TP FC message, 08 = length of single message accepted, 00 = rate limit none)
+    * 0x540: ISO-TP Channel Radio Link -> Mower,  Response for AT commands
+    * 0x541: ISO-TP Channel Mower -> Radio Link, AT-Commands for MQTT
+    * 0x542: ISO-TP Channel Radio Link -> Mower: Status info 16 bytes, hex `dc0ba197020101bbc100760015000100` with some bytes with minor changes
+    * 0x543: ISO-TP Channel Mower -> Radio Link. I was only able to see ISO-TP FC (flow control) frames, consisting of 3 bytes, mostly `30 08 00` (3=ISO-TP FC message, 08 = length of single message accepted, 00 = rate limit none)
 
 ## ISO-TP Protocol on CAN-ID 0x540/0x541
 
