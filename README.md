@@ -61,25 +61,24 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
 
   * 500kbit/s standard format.
   * Mower knows how to recognize the attached accessory type
-  * Known Ids
-
-    * 0x610: (2 bytes) off limits accessory sends this message on the bus every 0.5s
-        * `02 0f` is the version number of the off limits firmware
-    * 0x640: (2 bytes) radio link accessory sends this message on the bus every 0.5s
-        * `02 16` is the version number of the radio link firmware
+        * Mower sends 0x611 status byte periodically
+        * Accessories send their version number on their CAN id periodically 
+  * Mower status identification (maybe also version request to accessories?)
     * 0x611: (1 byte ) mower response of the message above
         * `0x01` mowing
         * `0x00` idle/home/not mowing in general
-    * 0x418: (8 bytes): offlimits accessory sends such message when in mowing state . This can frame contains the information for the robot to take action. Last byte is `0x00` when in no magnetic tape is away. When magnetic tape is detected and mower is moving relatively to the tape than last byte changes. 
-    * 0x540: ISO-TP Channel Radio Link -> Landroid
-    * 0x541: ISO-TP Channel Landroid -> Radio Link
-        * L -> RL: `AT+S` (Read status?)
-    
-    * 0x542: ISO-TP Channel Client 2
-    * 0x543: ISO-TP Channel Server 2
-  * DBC file:
-
-    * There is a preliminary dbc file with the known messages tagged.
+  * Off Limits module:
+    * 0x610: (2 bytes) off limits accessory sends this message on the bus every 0.5s
+        * `02 0f` is the version number of the off limits firmware
+    * 0x418: (8 bytes): offlimits accessory sends such message when in mowing state . This can frame contains the information for the robot to take action. Last byte is `0x00` when in no magnetic tape is away. When magnetic tape is detected and mower is moving relatively to the tape than last byte changes.
+    * 0x419 is also used for off limits
+  * Radio link module
+    * 0x640: (2 bytes) radio link accessory sends this message on the bus every 0.5s
+        * `02 16` is the version number of the radio link firmware
+    * 0x540: ISO-TP Channel Radio Link -> Landroid, AT-Commands for MQTT
+    * 0x541: ISO-TP Channel Landroid -> Radio Link (Response for AT commands)
+    * 0x542: ISO-TP Channel Radio Link -> Landroid: Status info 16 bytes, hex `dc0ba197020101bbc100760015000100` with some bytes with minor changes
+    * 0x543: ISO-TP Channel Landroid -> Radio Link. I was only able to see ISO-TP FC (flow control) frames, consisting of 3 bytes, mostly `30 08 00` (3=ISO-TP FC message, 08 = length of single message accepted, 00 = rate limit none)
 
 ## ISO-TP Protocol on CAN-ID 0x540/0x541
 
