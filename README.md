@@ -86,7 +86,7 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
 * Command: `AT+ISBOOT\n`
 * Response: `+ok=1,V.0.21`
 * Command (repeated): `AT+S\n`
-* Responses: `+ok=2520`, then `+ok=0000`, then `+ok=2000`
+* Responses: `+ok=2520` (probably before reset was executed), then `+ok=0000`, then `+ok=2000`
 * Command: `AT+MQINIT=cmd-eu-ats-prod.worxlandroid.com,34865D79C360,60,1\n`
 * Response: `+ok=`
 * Command: `AT+MQSUB=0,PRM100/34865D79C360/commandIn`
@@ -101,24 +101,43 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
 * Command: `AT+S\n`
 * Response: `+ok=2521` (New message!)
 * Command: `AT+MSGINFO\n`
-* Response: `+ok=PRM100/<MAC>/commandIn,92,C902` (MSGINFO Response. MQTT-Channel followed by probably the message length and a CRC)
+* Response: `+ok=PRM100/<MAC>/commandIn,<LENGTH>,C902` (MSGINFO Response. MQTT-Channel followed by the message length some checksum? NOT the CRC described below!)
 * Command: `AT+MSGRD=0\n` (Read message, begin at byte 0)
-* Response: `+ok=eyJpZCI6MzM1NDgsImNtZCI6MCwibGciOiJkZSIsInNuIjoiMjAyMjMwMjY3MzA0MDAxNjM3RDciLCJ0bSI6IjE5OjM3OjM3IiwiZHQiOiIxMy8wNi8yMDI0In0,E6F1` (Message, BASE64 encoded + CRC?). Message reads `{"id":33548,"cmd":0,"lg":"de","sn":"...........","tm":"19:37:37","dt":"13/06/2024"}`. In this case: Please update mqtt status.
+* Response: `+ok=eyJpZCI6MzM1NDgsImNtZCI6MCwibGciOiJkZSIsInNuIjoiMjAyMjMwMjY3MzA0MDAxNjM3RDciLCJ0bSI6IjE5OjM3OjM3IiwiZHQiOiIxMy8wNi8yMDI0In0,E6F1` (Message, BASE64 encoded + CRC-16). Message reads `{"id":33548,"cmd":0,"lg":"de","sn":"...........","tm":"19:37:37","dt":"13/06/2024"}`. In this case: Please update mqtt status.
 * Command: `AT+MSGRD=5C\n` (Read message, begin at byte 0x5C)
-* Response: `+ok=done` (No more bytes)
+* Response: `+ok=done` (No bytes left)
 * Command: `AT+S` (Status query)
 * Response: `+ok=2520` (Normal status reply)
 
 ### Send status update        
-* Command: AT+PUBWR=0000,<base64-data>,<CRC>\n` (Write data, offset 0000, data base64 encoded with some CRC?
+* Command: AT+PUBWR=0000,<base64-data>,<CRC>\n` (Write data, offset 0000, data base64 encoded, CRC see below)
 * Response: +ok=
 * Command: AT+PUBWR=0096,<base64-data>,<CRC>\n`
 * Response: +ok=
 * ....
-* Command: `AT+PUBINFO=PRM100/34865D79C360/commandOut,881,E05D` (Write data to MQTT topic)
+* Command: `AT+PUBINFO=PRM100/<MAC>/commandOut,<LENGTH>,<CRC>` (Write data to MQTT topic, MAC address of mower, length of base64 decoded message, CRC see below)
 * Response: +ok=
 * After first send message, the status info changes from +ok=2500 to +ok=2520
 
+## CRC algorithm
+The CRC used for the base64 encoded data is calculated using CRC-16/ARC on the base64 decoded (plain text) data. Found using https://crccalc.com/.
+
+### C
+#include <stddef.h>
+#include <stdint.h>
+
+uint16_t crc16arc_bit(uint16_t crc, void const *mem, size_t len) {
+    unsigned char const *data = mem;
+    if (data == NULL)
+        return 0;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (unsigned k = 0; k < 8; k++) {
+            crc = crc & 1 ? (crc >> 1) ^ 0xa001 : crc >> 1;
+        }
+    }
+    return crc;
+}
 
 
 
