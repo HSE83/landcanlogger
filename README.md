@@ -110,13 +110,13 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
 * Response: `+ok=2520` (Normal status reply)
 
 ### Send status update        
-* Command: AT+PUBWR=0000,<base64-data>,<CRC>\n` (Write data, offset 0000, data base64 encoded, CRC see below)
-* Response: +ok=
-* Command: AT+PUBWR=0096,<base64-data>,<CRC>\n`
-* Response: +ok=
+* Command: `AT+PUBWR=0000,<base64-data>,<CRC>\n` (Write data, offset 0000, data base64 encoded, CRC see below)
+* Response: `+ok=`
+* Command: `AT+PUBWR=0096,<base64-data>,<CRC>\n`
+* Response: `+ok=`
 * ....
 * Command: `AT+PUBINFO=PRM100/<MAC>/commandOut,<LENGTH>,<CRC>` (Write data to MQTT topic, MAC address of mower, length of base64 decoded message, CRC see below)
-* Response: +ok=
+* Response: `+ok=`
 * After first send message, the status info changes from +ok=2500 to +ok=2520
 
 ## CRC algorithm
