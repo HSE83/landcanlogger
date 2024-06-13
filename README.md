@@ -71,11 +71,56 @@ python sendcan.py -H MQTT_HOST -u MQTT_USER -p MQTT_PASS -P MQTT_PORT -t can2 -i
         * `0x01` mowing
         * `0x00` idle/home/not mowing in general
     * 0x418: (8 bytes): offlimits accessory sends such message when in mowing state . This can frame contains the information for the robot to take action. Last byte is `0x00` when in no magnetic tape is away. When magnetic tape is detected and mower is moving relatively to the tape than last byte changes. 
-    * 0x540: ISO-TP Channel Mower to Radio Link
-    * 0x541: ISO-TP Channel Radio Link to Mower
+    * 0x540: ISO-TP Channel Radio Link -> Landroid
+    * 0x541: ISO-TP Channel Landroid -> Radio Link
+        * L -> RL: `AT+S` (Read status?)
+    
+    * 0x542: ISO-TP Channel Client 2
+    * 0x543: ISO-TP Channel Server 2
   * DBC file:
 
     * There is a preliminary dbc file with the known messages tagged.
+
+## ISO-TP Protocol on CAN-ID 0x540/0x541
+
+### Reconnect to base station
+* Command: `AT+ISBOOT\n`
+* Response: `+ok=1,V.0.21`
+* Command (repeated): `AT+S\n`
+* Responses: `+ok=2520`, then `+ok=0000`, then `+ok=2000`
+* Command: `AT+MQINIT=cmd-eu-ats-prod.worxlandroid.com,34865D79C360,60,1\n`
+* Response: `+ok=`
+* Command: `AT+MQSUB=0,PRM100/34865D79C360/commandIn`
+* Response: `+ok=`
+* Command: `AT+MQCON=2\n`
+* Response: `+ok=`
+* Command: `AT+S\n`
+* Response: `+ok=2100`, then `+ok=2200`, then `+ok=2400`, then `+ok=2500` for a long time
+* (Response changes after first PUBINFO-Command to `+ok=2520`)
+
+### Query for data
+* Command: `AT+S\n`
+* Response: `+ok=2521` (New message!)
+* Command: `AT+MSGINFO\n`
+* Response: `+ok=PRM100/<MAC>/commandIn,92,C902` (MSGINFO Response. MQTT-Channel followed by probably the message length and a CRC)
+* Command: `AT+MSGRD=0\n` (Read message, begin at byte 0)
+* Response: `+ok=eyJpZCI6MzM1NDgsImNtZCI6MCwibGciOiJkZSIsInNuIjoiMjAyMjMwMjY3MzA0MDAxNjM3RDciLCJ0bSI6IjE5OjM3OjM3IiwiZHQiOiIxMy8wNi8yMDI0In0,E6F1` (Message, BASE64 encoded + CRC?). Message reads `{"id":33548,"cmd":0,"lg":"de","sn":"...........","tm":"19:37:37","dt":"13/06/2024"}`. In this case: Please update mqtt status.
+* Command: `AT+MSGRD=5C\n` (Read message, begin at byte 0x5C)
+* Response: `+ok=done` (No more bytes)
+* Command: `AT+S` (Status query)
+* Response: `+ok=2520` (Normal status reply)
+
+### Send status update        
+* Command: AT+PUBWR=0000,<base64-data>,<CRC>\n` (Write data, offset 0000, data base64 encoded with some CRC?
+* Response: +ok=
+* Command: AT+PUBWR=0096,<base64-data>,<CRC>\n`
+* Response: +ok=
+* ....
+* Command: `AT+PUBINFO=PRM100/34865D79C360/commandOut,881,E05D` (Write data to MQTT topic)
+* Response: +ok=
+* After first send message, the status info changes from +ok=2500 to +ok=2520
+
+
 
 
 ## Why?
